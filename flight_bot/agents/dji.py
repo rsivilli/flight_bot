@@ -4,9 +4,13 @@ from pydantic import constr
 
 from flight_bot.agents.agent import Agent
 from flight_bot.util import latlon_format
+from flight_bot.util import getMAC
 
 
 class DJI_Base(Agent):
+    src: conbytes(
+        max_length=6, min_length=6
+    ) = getMAC("dji")
     # Begin DJI specific info
     header: conbytes(
         max_length=8, min_length=8
