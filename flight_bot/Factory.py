@@ -6,6 +6,7 @@ from flight_bot.agents.parrot import Parrot_Base
 
 
 class DroneType(Enum):
+    """Supported drone types for agent create"""
     Base = 1
     DJI = 2
     PARROT = 3
@@ -14,7 +15,7 @@ class DroneType(Enum):
 def getDrone(dronetype: DroneType) -> Agent:
     if dronetype == DroneType.DJI:
         return DJI_Base()
-    if dronetype == DroneType.PARROT:
+    elif dronetype == DroneType.PARROT:
         return Parrot_Base()
-    if dronetype == DroneType.Base:
+    elif dronetype == DroneType.Base:
         return Agent()

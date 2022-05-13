@@ -16,6 +16,9 @@ print(macaddresses)
 
 
 def getMAC(company: str) -> bytes:
+    """
+    Based on company name and IEEE MAC/company reservations, randomly generate mac address in a byte string format
+    """
     reservedmacs = list(macaddresses.get(company).keys())
     macbase = str(random.choice(reservedmacs)).lower()
     print(macbase)
