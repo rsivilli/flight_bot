@@ -1,0 +1,10 @@
+name: flight_bot
+channels:
+  - conda-forge
+  - anaconda
+  - defaults
+dependencies:
+  - pydantic
+  - requests
+  - pytest
+prefix: ./env
