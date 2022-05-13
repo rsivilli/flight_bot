@@ -4,7 +4,7 @@ import json
 import requests
 
 
-searchfor = ["parrot", "dji"]
+searchfor = ["parrot", "dji","hobbico"]
 
 
 def addRecord(key: str, row: list[str], store: dict[str, dict[str, str]]):

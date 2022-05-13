@@ -6,6 +6,7 @@ from flight_bot.factory import getDrone
 
 
 def test_base():
+    """make sure factory gives us what we're asking for"""
     assert type(getDrone(DroneType.Base)) == Agent
     assert type(getDrone(DroneType.DJI)) == DJI_Base
     assert type(getDrone(DroneType.PARROT)) == Parrot_Base
