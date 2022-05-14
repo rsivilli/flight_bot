@@ -7,7 +7,7 @@ def test_base():
 
 def test_toBytes():
     agent = DJI_Base()
-    assert len(agent.get_packet()) == 270
+    assert len(agent.get_packet()) == 272
 
 
 def test_diffMacandSeq():

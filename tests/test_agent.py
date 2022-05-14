@@ -10,7 +10,7 @@ def test_init():
 
 def test_toBytres():
     agent = Agent()
-    assert len(agent.get_packet()) == 186
+    assert len(agent.get_packet()) == 188
 
 
 def test_diffSeq():

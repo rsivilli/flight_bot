@@ -107,6 +107,8 @@ class Agent:
             self.timestamp_value,
             self.beacon_interval,
             self.capability_flags,
+            b"\x00",#adding addiditional bytes required to handle dynamic ssid assigned (i.e calculating len at runtime)
+            len(self.ssid).to_bytes(1,"little"),
             self.ssid,
             self.supported_rates,
             self.current_channel,
