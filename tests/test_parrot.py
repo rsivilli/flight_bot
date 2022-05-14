@@ -9,4 +9,4 @@ def test_base():
 def test_tobytes():
     """Parrot does not add to broadcast base. Should be the same length as base agent"""
     agent = Parrot_Base()
-    assert len(agent.get_bytes()) == 186
+    assert len(agent.get_packet()) == 186

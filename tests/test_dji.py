@@ -7,4 +7,4 @@ def test_base():
 
 def test_tobytes():
     agent = DJI_Base()
-    assert len(agent.get_bytes()) == 270
+    assert len(agent.get_packet()) == 270

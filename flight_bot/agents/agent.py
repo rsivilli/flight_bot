@@ -1,11 +1,17 @@
+from email.generator import Generator
 from math import pi
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pydantic import conbytes
 from pydantic import conint
+from random import randint
 
+MAXSEQ = 65535
 
+def _seedSeq():
+    return randint(0,MAXSEQ)
 class Agent(BaseModel):
+    _seq:int = Field(default_factory=_seedSeq) 
     agent_type: conbytes(max_length=1, min_length=1) = b"\x80"
     flags: conbytes(max_length=1, min_length=1) = b"\x00"
     duration: conbytes(max_length=2, min_length=2) = b"\x00\x00"
@@ -14,7 +20,7 @@ class Agent(BaseModel):
         max_length=6, min_length=6
     ) = b"\x01\x02\x03\x04\x05\x06"  # Set this to MAC address. Pull from drone
     bssid: conbytes(max_length=6, min_length=6) = b"\x01\x02\x03\x04\x05\x06"
-    seq: conint(le=65535, ge=0) = 90  # uint16le 2
+    seq:conbytes(max_length=2,min_length=2)= b"\x00\x00"# uint16le 2
     timestamp_value: conbytes(
         max_length=8, min_length=8
     ) = b"\x01\x02\x03\x04\x05\x06\x07\x08"  # this is probably uint8le
@@ -53,38 +59,50 @@ class Agent(BaseModel):
     vendor_specific_information: conbytes(
         max_length=26, min_length=26
     ) = b"\xdd\x18\x00\x50\xf2\x02\x01\x01\x00\x00\x03\xa4\x00\x00\x27\xa4\x00\x00\x42\x43\x5e\x00\x62\x32\x2f\x00"
+    
 
-    def get_bytes(self) -> bytes:
+
+    
+    def _incrementseq(self):
+        self._seq=self._seq+1
+        if self._seq > MAXSEQ:
+            self._seq = 0
+        self.seq = self._seq.to_bytes(2,"little")
+    
+    
+    def get_bytes(self):
+
         """
         Get the bytestring for sending. Should produce 128byte array ALWAYS
         Note for optimizing - allocate the byte array once within __init__ and then just update the portions of the array as needed
         """
         out = [
-            self.agent_type,
-            self.flags,
-            self.duration,
-            self.dst,
-            self.src,
-            self.bssid,
-            self.seq.to_bytes(2, "little"),
-            self.timestamp_value,
-            self.beacon_interval,
-            self.capability_flags,
-            self.ssid,
-            self.supported_rates,
-            self.current_channel,
-            self.traffic_indication_map,
-            self.country_information,
-            self.erp_information,
-            self.extended_support_rates,
-            self.ht_capabilities,
-            self.ht_information,
-            self.rsn_information,
-            self.vendor_specific_information,
-        ]
-        print(out)
-        for val in out:
-            print("{}:{}".format(val, len(val)))
-        print(sum([len(val) for val in out]))
+                self.agent_type,
+                self.flags,
+                self.duration,
+                self.dst,
+                self.src,
+                self.bssid,
+                self.seq,
+                self.timestamp_value,
+                self.beacon_interval,
+                self.capability_flags,
+                self.ssid,
+                self.supported_rates,
+                self.current_channel,
+                self.traffic_indication_map,
+                self.country_information,
+                self.erp_information,
+                self.extended_support_rates,
+                self.ht_capabilities,
+                self.ht_information,
+                self.rsn_information,
+                self.vendor_specific_information,
+            ]
+        while(True):
+            self._incrementseq()
 
-        return b"".join(out)
+            yield b"".join(out)
+
+    def get_packet(self) ->bytes:
+        return next(self.get_bytes())

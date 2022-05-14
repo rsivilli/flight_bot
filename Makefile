@@ -21,5 +21,4 @@ updatenv:
 	conda env update --file environment.yml  --prune
 
 
-.PHONE: exportenv
-exportenv
+
