@@ -5,7 +5,7 @@ def test_base():
     assert DJI_Base() is not None
 
 
-def test_tobytes():
+def test_toBytes():
     agent = DJI_Base()
     assert len(agent.get_packet()) == 270
 

@@ -1,7 +1,7 @@
-from math import pi
 from random import randint
+from time import time
 
-MAXSEQ = 65535
+MAXSEQ = 4095
 
 
 def _seedSeq():
@@ -9,16 +9,61 @@ def _seedSeq():
 
 
 class Agent:
+    # useful for simplified calc of seq
     _seq: int
-    agent_type: bytes = b"\x80"
+
+    # Frame control field first 4 bits set subtype, next two set type, followed by a version
+    # by setting frame_control to 10000000, we are setting to Beacon v0 which is a subtype of
+    # management frames
+    frame_control: bytes = b"\x80"
+
+    # Setting flags.
+    # 0000 0000
+    # |||| ||00  - DS status: from from STA to DS via an AP
+    # |||| |0    - More fragments: this is the last fragment
+    # |||| 0     - Retry: frame is not being retransmitted
+    # |||0       - PWR MGT:: STA will stay up
+    # ||0        - More Data: no more data buffered
+    # |0         - Protected flag: Data is not protected
+    # 0          - Order flag: Not strictly ordered
     flags: bytes = b"\x00"
+
+    # Duration. Not meaningful in beacon (TBR)
     duration: bytes = b"\x00\x00"
+
+    # Destination address. As this is beacon(broadcast), we set to 255 across the board
     dst: bytes = b"\xff\xff\xff\xff\xff\xff"
-    src: bytes = b"\x01\x02\x03\x04\x05\x06"  # Set this to MAC address. Pull from drone
+
+    # Source address. Important for children as we want this to be set within the range of the respective manufacturer's reserved range
+    src: bytes = b"\x01\x02\x03\x04\x05\x06"
+    # BSSID is used in beacons. Seems like we'll just set this to the same address as src (TBR)
     bssid: bytes = b"\x01\x02\x03\x04\x05\x06"
+
+    # Sequence number is broke into the sequence number as the first 12 bits and fragment number in the last 4
+    # this means that max value is 4095
     seq: bytes = b"\x00\x00"  # uint16le 2
-    timestamp_value: bytes = b"\x01\x02\x03\x04\x05\x06\x07\x08"  # this is probably
+
+    # timestamp in seconds. Might consider creating an artificial clockdrift
+    timestamp_value: bytes = b"\x01\x02\x03\x04\x05\x06\x07\x08"
+
+    # time in TUs (where 1 TU equals 1024microseconds). Setting to \x64\x00 is setting the intervale to 25600x1024/1000000 or ~26 seconds
     beacon_interval: bytes = b"\x64\x00"
+
+    # advertize network capabilities
+    # 0000 0000 0000 0101
+    # |||| |||| |||| |||1    - ESS Bit. By setting to 1, we are claiming to be an access point
+    # |||| |||| |||| ||0     - IBSS Bit. Mutally exclusive with ESS bit. Stations would set this to 1 and ESS to 0
+    # |||| |||| |||| |1      - CF-Pollable. This particular configuration of the Contention-free polling bits means that the access point uses PCF for delivery but does not support polling
+    # |||| |||| |||| 0       - CF-Poll request
+    # |||| |||| |||0         - Privacy bit. WSetting to 1 requires use of WEP for confidentiality
+    # |||| |||| ||0          - Short Preamble. Used in 802.11b to support high-rate DSSPHY. Setting it to 1 indicates that the network is using the short preamble
+    # |||| |||| |0           - PBCC: Used in 802.11b to support high-rate DSSPHY.hen it is set to 1, it indicates that the network is using the packet binary convolution coding modulation scheme
+    # |||| |||| 0            - Channel Agility. This field was added to 802.11b to support the high rate DSSS PHY. When it is set to one, it indicates that the network is using the Channel Agility option
+    # |||| ||00              - Reserved
+    # |||| |0                - Short slot time. This bit is set to one to indicate the use of the shorter slot time supported by 802.11g
+    # |||0 0                 - Reserved
+    # ||0                    - DSSS-OFDM This bit is set to one to indicate that the optional DSSS-OFDM frame construction in 802.11g is in use.
+    #                       - Reserved
     capability_flags: bytes = b"\x00\x05"
 
     # SSID suggested generation ["Spark-","Mavic-"]+[random(abcdef0123456789) for i in range(6)]. This means that ssid length should always be 12 (\x0c)
@@ -42,7 +87,8 @@ class Agent:
         self._seq = self._seq + 1
         if self._seq > MAXSEQ:
             self._seq = 0
-        self.seq = self._seq.to_bytes(2, "little")
+        # Recall, first 12 bits are, last four are fragment(which should always be 0)
+        self.seq = (self._seq << 4).to_bytes(2, "little")
 
     def get_bytes(self):
 
@@ -51,7 +97,7 @@ class Agent:
         Note for optimizing - allocate the byte array once within __init__ and then just update the portions of the array as needed
         """
         out = [
-            self.agent_type,
+            self.frame_control,
             self.flags,
             self.duration,
             self.dst,
@@ -75,6 +121,7 @@ class Agent:
         ]
         while True:
             self._incrementseq()
+            self.timestamp_value = int(time()).to_bytes(8, "little")
 
             yield b"".join(out)
 

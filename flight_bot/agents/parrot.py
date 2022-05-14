@@ -6,3 +6,4 @@ class Parrot_Base(Agent):
     def __init__(self):
         super().__init__()
         self.src = getMAC("parrot")
+        self.bssid = self.src

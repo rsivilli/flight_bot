@@ -43,6 +43,7 @@ class DJI_Base(Agent):
     def __init__(self):
         super().__init__()
         self.src = getMAC("dji")
+        self.bssid = self.src
 
     def get_packet(self) -> bytes:
         additional = b"".join(

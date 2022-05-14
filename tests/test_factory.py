@@ -10,3 +10,9 @@ def test_base():
     assert type(getDrone(DroneType.Base)) == Agent
     assert type(getDrone(DroneType.DJI)) == DJI_Base
     assert type(getDrone(DroneType.PARROT)) == Parrot_Base
+
+
+def test_srcBssidSame():
+    for drone_type in DroneType:
+        agent = getDrone(drone_type)
+        assert agent.src == agent.bssid
