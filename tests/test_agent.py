@@ -9,6 +9,9 @@ def test_init():
 
 
 def test_toBytres():
+    #Note, this can easily start to fail as we build out a more dynamic generation. 
+    #Mostly here to sanity check that things aren't changing unself we mean to. 
+    #Update as needed
     agent = Agent()
     assert len(agent.get_packet()) == 188
 

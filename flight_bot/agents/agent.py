@@ -2,6 +2,9 @@ from random import randint
 from time import time
 
 MAXSEQ = 4095
+COUNTRYCODE_DEFAULT = "US"
+OPMODE_DEFAULT = b"\x00"
+COUNTRYOPERATIONS = 0
 
 
 def _seedSeq():
@@ -67,11 +70,31 @@ class Agent:
     capability_flags: bytes = b"\x00\x05"
 
     # SSID suggested generation ["Spark-","Mavic-"]+[random(abcdef0123456789) for i in range(6)]. This means that ssid length should always be 12 (\x0c)
+    # SSID is 0-32 bytes plus 1 byte for field number and another for length (so value would be dynamically generated between 0-32)
     ssid: bytes = b"\x00\x0c\x41\x42\x43\x44\x45\x46\x41\x42\x43\x44\x45\x46"  # \x00+ssid.length.chr+ssid
-    supported_rates: bytes = b"\x01\x08\x82\x84\x8b\x0c\x12\x96\x18\x24"
+
+    # up to 8 supported data rates should be encoded here. Each data rate is encoded as a byte, where 11 bits are for the data rate itself and the last bit is used for flagging if the rate is required or optional for connecting system
+    # similar to ssid, first by is a field number and the following is the number of rates. As rates may change per platform, should be dynamically created
+    supported_rates: bytes = b"\x82\x84\x8b\x0c\x12\x96\x18\x24"
+
+    #Current channel being used. Assuming 2.4 Ghz, this should be between 0-14 (includes other country approved channels)
+    # again, field id and length prefix
     current_channel: bytes = b"\x03\x01\x0b"  # last byte should be dynamic channel
+
+    
+    # explaination of this field is around letting stations know how many buffered packets are waiting to be picked up. Currently, because we are spoofing, this is statically set to 0, but we may want to add behavior to add realism
+    #field id and length prefix
     traffic_indication_map: bytes = b"\x05\x04\x00\x01\x00\x00"
+    
+    #reglatory info about country of operation 
+
+    # field id and length prefix
+    #followed by a two bytes for a two letter country code
+    #followed by a variable number of groupings of 3 bytes signifying the first(lowest) channel covered by the constrait, the number of channels covered, and the max power in dBm
+    # there is an optional padding byte that should be added if the total length would be odd
     country_information: bytes = b"\x07\x06\x55\x53\x00\x01\x0b\x1e"
+
+
     erp_information: bytes = b"\x2a\x01\x00"
     extended_support_rates: bytes = b"\x32\x04\x30\x48\x60\x6c"
     ht_capabilities: bytes = b"\x2d\x1a\xac\x01\x02\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
@@ -79,9 +102,35 @@ class Agent:
     rsn_information: bytes = b"\x30\x14\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac\x02\x0c\x00"
     vendor_specific_information: bytes = b"\xdd\x18\x00\x50\xf2\x02\x01\x01\x00\x00\x03\xa4\x00\x00\x27\xa4\x00\x00\x42\x43\x5e\x00\x62\x32\x2f\x00"
 
-    def __init__(self):
+    def __init__(self,**kwargs):
+
         self._seq = randint(0, MAXSEQ)
         self._incrementseq()
+        self._setCountryInfo()
+        
+        
+    def _setCountryInfo(self,**kwargs):
+        if  kwargs.get("country_code") is not None:
+            country_code = kwargs["country_code"]
+        else:
+            country_code = COUNTRYCODE_DEFAULT
+        if kwargs.get("op_mode") is not None:
+            op_mode = ord(str(kwargs["op_mode"])).to_bytes(1,"little")
+        else: 
+            op_mode = OPMODE_DEFAULT
+        if kwargs.get("country_regs") is not None:
+            country_regs = kwargs["country_regs"]
+        else:
+            country_regs = b"\x01\x0b\x1e"
+        country_postfix = b''.join([ord(str(val).upper()).to_bytes(1,"little") for val in country_code])+op_mode+country_regs
+        
+        #if length is not even, add padding trailer. Pretty sure new length is calculated TBR
+        if len(country_postfix)%2 != 0:
+            country_postfix = country_postfix+b"\x00"
+
+
+
+        self.country_information = b'\x07'+len(country_postfix).to_bytes(1,"little")+ country_postfix
 
     def _incrementseq(self):
         self._seq = self._seq + 1
@@ -110,6 +159,8 @@ class Agent:
             b"\x00",#adding addiditional bytes required to handle dynamic ssid assigned (i.e calculating len at runtime)
             len(self.ssid).to_bytes(1,"little"),
             self.ssid,
+            b"\x01",
+            len(self.supported_rates).to_bytes(1,"little"),
             self.supported_rates,
             self.current_channel,
             self.traffic_indication_map,
