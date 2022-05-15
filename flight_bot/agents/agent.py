@@ -94,9 +94,17 @@ class Agent:
     # there is an optional padding byte that should be added if the total length would be odd
     country_information: bytes = b"\x07\x06\x55\x53\x00\x01\x0b\x1e"
 
-
+    #field id and length prefix
+    #Basically statiting that no non-802.11g stations are associated to/connected with the network.
+    #Would this ever change based on fake drone connections?
     erp_information: bytes = b"\x2a\x01\x00"
+
+
+    #field id and length prefix
+    #identical to supported rates above but allows additional 255 bytes to be supported 
     extended_support_rates: bytes = b"\x32\x04\x30\x48\x60\x6c"
+
+    
     ht_capabilities: bytes = b"\x2d\x1a\xac\x01\x02\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
     ht_information: bytes = b"\x3d\x16\x0b\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"  # third byte should be dynamic channel
     rsn_information: bytes = b"\x30\x14\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac\x02\x0c\x00"
