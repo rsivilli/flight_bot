@@ -66,7 +66,7 @@ class Agent:
     # |||| |0                - Short slot time. This bit is set to one to indicate the use of the shorter slot time supported by 802.11g
     # |||0 0                 - Reserved
     # ||0                    - DSSS-OFDM This bit is set to one to indicate that the optional DSSS-OFDM frame construction in 802.11g is in use.
-    #                       - Reserved
+    # 00                      - Reserved
     capability_flags: bytes = b"\x00\x05"
 
     # SSID suggested generation ["Spark-","Mavic-"]+[random(abcdef0123456789) for i in range(6)]. This means that ssid length should always be 12 (\x0c)
@@ -104,7 +104,29 @@ class Agent:
     #identical to supported rates above but allows additional 255 bytes to be supported 
     extended_support_rates: bytes = b"\x32\x04\x30\x48\x60\x6c"
 
-    
+    #advertising optional High Throughput (HT) capabilities offered
+    #field id and length (fixed at 26 bytes)
+    # 1010 1100 0000 0001
+    # HT Capabilities Info(first 2 bytes):
+    # .... .... .... ...1 = HT LDPC coding capability: Transmitter supports receiving LDPC coded packets
+    # .... .... .... ..0. = HT Support channel width: Transmitter only supports 20MHz operation
+    # .... .... .... 00.. = HT SM Power Save: SM Power Save disabled (0x3)
+    # .... .... ...0 .... = HT Green Field: Transmitter is not able to receive PPDUs with Green Field (GF) preamble
+    # .... .... ..0. .... = HT Short GI for 20MHz: Not Supported
+    # .... .... .0.. .... = HT Short GI for 40MHz: Not supported
+    # .... .... 0... .... = HT Tx STBC: Not supported
+    # .... ..00 .... .... = HT Rx STBC: No special stream support
+    # .... .1.. .... .... = HT Delayed Block ACK: Transmitter does  support HT-Delayed BlockAck
+    # .... 1... .... .... = HT Max A-MSDU length: 7935 bytes
+    # ...0 .... .... .... = HT DSSS/CCK mode in 40MHz: Won't/Can't use of DSSS/CCK in 40 MHz
+    # ..1. .... .... .... = HT PSMP Support: Supported
+    # .0.. .... .... .... = HT Forty MHz Intolerant: Use of 40 MHz transmissions unrestricted/allowed
+    # 1... .... .... .... = HT L-SIG TXOP Protection support: Supported
+    # A-MPDU Parameters: (Next Byte)
+    # .... ..10 = Maximum Rx A-MPDU Length: 0x2 (32767[Bytes])
+    # ...0 00.. = MPDU Density: no restriction [usec]
+    # 000. .... = Reserved: 0x0
+    #RX bit mask - next 10 bytes 
     ht_capabilities: bytes = b"\x2d\x1a\xac\x01\x02\xff\xff\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
     ht_information: bytes = b"\x3d\x16\x0b\x00\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"  # third byte should be dynamic channel
     rsn_information: bytes = b"\x30\x14\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac\x04\x01\x00\x00\x0f\xac\x02\x0c\x00"
